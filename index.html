@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Random Image</title>
+<style>
+  :root {
+    --gold: #fff3cf;
+    --peach: #ffe0c2;
+    --ink: #3b2a14;
+    --accent: #e8a317;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    background: linear-gradient(135deg, var(--gold), var(--peach));
+  }
+  h1 { margin: 0; font-size: 1.3rem; font-weight: 700; }
+  .stage {
+    width: min(92vw, 900px);
+    height: min(72vh, 700px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #pic {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(120, 80, 10, .25);
+    cursor: pointer;
+    background: #fff;
+    transition: opacity .2s ease, transform .15s ease;
+  }
+  #pic:active { transform: scale(.98); }
+  #pic.loading { opacity: .3; }
+  #msg { min-height: 1.2em; font-size: .95rem; text-align: center; }
+  footer { font-size: .8rem; opacity: .75; }
+</style>
+</head>
+<body>
+  <h1>Click the image for a new one</h1>
+  <div class="stage">
+    <img id="pic" alt="Random image" hidden>
+  </div>
+  <div id="msg">Loading…</div>
+  <footer>&copy; 2026 EasyLandX</footer>
+
+<script>
+  var BASE = "https://easylandx.github.io/images/";
+
+  // Auto-discovery: lists the repo's images folder through the GitHub API.
+  var API = "https://api.github.com/repos/easylandx/easylandx.github.io/contents/images";
+
+  // Fallback: if auto-discovery fails, list your file names here, e.g. ["cat1.jpg", "sunset.png"]
+  var MANUAL_IMAGES = [];
+
+  var EXT = /\.(jpe?g|png|gif|webp|avif|svg)$/i;
+  var pic = document.getElementById("pic");
+  var msg = document.getElementById("msg");
+  var images = [];
+  var current = null;
+
+  function pickRandom() {
+    if (images.length === 0) return null;
+    if (images.length === 1) return images[0];
+    var next;
+    do { next = images[Math.floor(Math.random() * images.length)]; }
+    while (next === current);
+    return next;
+  }
+
+  function show() {
+    var src = pickRandom();
+    if (!src) { msg.textContent = "No images found."; return; }
+    current = src;
+    pic.classList.add("loading");
+    var tmp = new Image();
+    tmp.onload = function () {
+      pic.src = src;
+      pic.hidden = false;
+      pic.classList.remove("loading");
+      msg.textContent = decodeURIComponent(src.split("/").pop());
+    };
+    tmp.onerror = function () {
+      // Broken file: drop it and try another.
+      images = images.filter(function (i) { return i !== src; });
+      if (images.length) { show(); } else { msg.textContent = "Could not load any images."; }
+    };
+    tmp.src = src;
+  }
+
+  function start(list) {
+    images = list;
+    if (!images.length) {
+      msg.textContent = "No images found. Add file names to MANUAL_IMAGES in the code.";
+      return;
+    }
+    show();
+  }
+
+  pic.addEventListener("click", show);
+
+  fetch(API)
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (files) {
+      var list = files
+        .filter(function (f) { return f.type === "file" && EXT.test(f.name); })
+        .map(function (f) { return BASE + encodeURIComponent(f.name); });
+      if (!list.length) throw new Error("empty");
+      start(list);
+    })
+    .catch(function () {
+      start(MANUAL_IMAGES.map(function (n) { return BASE + encodeURIComponent(n); }));
+    });
+</script>
+</body>
+</html>
