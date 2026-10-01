@@ -62,7 +62,18 @@
   var API = "https://api.github.com/repos/easylandx/easylandx.github.io/contents/images";
 
   // Fallback: if auto-discovery fails, list your file names here, e.g. ["cat1.jpg", "sunset.png"]
-  var MANUAL_IMAGES = [];
+  var MANUAL_IMAGES = [
+    "1786290174145.jpg",
+    "1786290174393.jpg",
+    "1786290174464.jpg",
+    "1786304914690.jpg",
+    "1786304914713.jpg",
+    "1786304914743.jpg",
+    "600x200.jpg",
+    "d5784c5f-6dd1-42e5-a948-b89cc1d6f2ae.jpg",
+    "e6e34278-8825-4d5d-b773-dd637ca727e4.png",
+    "images.jpg"
+  ];
 
   var EXT = /\.(jpe?g|png|gif|webp|avif|svg)$/i;
   var pic = document.getElementById("pic");
@@ -110,7 +121,10 @@
 
   pic.addEventListener("click", show);
 
-  fetch(API)
+  // If the list above is filled in, use it directly; otherwise try the GitHub API.
+  if (MANUAL_IMAGES.length) {
+    start(MANUAL_IMAGES.map(function (n) { return BASE + encodeURIComponent(n); }));
+  } else fetch(API)
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function (files) {
       var list = files
